@@ -14,7 +14,12 @@ def get_table():
     f.close()
 
     #ログイン処理
-    driver = webdriver.Chrome()
+    options = Options()
+    options.add_argument('--headless')
+    options.add_argument('--no-sandbox')
+    options.add_argument('--disable-gpu')
+    options.add_argument('--window-size=1280,1024')
+    driver = webdriver.Chrome(chrome_options=options)
     driver.get("https://www.k.kyoto-u.ac.jp/student/la/notice/cancel")
     driver.find_element_by_id("username").send_keys(account["ecs-id"])
     driver.find_element_by_id("password").send_keys(account["password"])
