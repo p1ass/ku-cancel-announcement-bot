@@ -10,7 +10,7 @@ import sys
 #一般教養科目の休講情報を取得しdfで返す
 def get_table():
     #アカウント情報を取得
-    f = open("account.json","r")
+    f = open("/home/ec2-user/KUCancelAnnouncementBot/account.json","r")
     account = json.load(f)
     f.close()
 
@@ -95,7 +95,7 @@ def create_messages(df,date,now):
 
 #msgで渡されたstringをツイッターに投稿する
 def post_to_twitter(msg):
-    f = open("twitter_account.json","r")
+    f = open("/home/ec2-user/KUCancelAnnouncementBot/twitter_account.json","r")
     tw_ac = json.load(f)
     f.close()
     twitter = OAuth1Session(tw_ac['consumer_key'], tw_ac['consumer_secret'], tw_ac['access_token_key'], tw_ac['access_token_secret'])
