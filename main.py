@@ -6,11 +6,15 @@ import datetime
 import time
 from requests_oauthlib import OAuth1Session
 import sys
+import os
 
 #一般教養科目の休講情報を取得しdfで返す
 def get_table():
     #アカウント情報を取得
-    f = open("/home/ec2-user/KUCancelAnnouncementBot/account.json","r")
+    if os.name == "nt":
+        f = open("./account.json","r")
+    else:
+        f = open("/home/ec2-user/KUCancelAnnouncementBot/account.json","r")
     account = json.load(f)
     f.close()
 
@@ -71,7 +75,8 @@ def get_table():
 def create_messages(df,date,now):
     msgs = []
     data = []
-    msg =  date.strftime("%m/%d")+"の休講情報"
+    now_time = datetime.datetime.now().strftime("%H:%M")
+    msg =  date.strftime("%m/%d")+"の休講情報[{}]".format(now_time)
 
     for i in range(now,6):
         tmp_df = df[df["time"] == i]
@@ -87,7 +92,7 @@ def create_messages(df,date,now):
                 msg += data[j]
             else:
                 msgs.append(msg)
-                msg = date.strftime("%m/%d")+"の休講情報(続き)"
+                msg = date.strftime("%m/%d")+"の休講情報(続き)[{}]".format(now_time)
                 msg +="\n【{0}限】\n".format(i)
                 msg += data[j]
     msgs.append(msg)
@@ -95,7 +100,10 @@ def create_messages(df,date,now):
 
 #msgで渡されたstringをツイッターに投稿する
 def post_to_twitter(msg):
-    f = open("/home/ec2-user/KUCancelAnnouncementBot/twitter_account.json","r")
+    if os.name == "nt":
+        f = open("./twitter_account.json","r")
+    else:
+        f = open("/home/ec2-user/KUCancelAnnouncementBot/twitter_account.json","r")
     tw_ac = json.load(f)
     f.close()
     twitter = OAuth1Session(tw_ac['consumer_key'], tw_ac['consumer_secret'], tw_ac['access_token_key'], tw_ac['access_token_secret'])
