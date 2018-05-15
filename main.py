@@ -8,8 +8,16 @@ from requests_oauthlib import OAuth1Session
 import sys
 import os
 
+#ヘッドレスブラウザを起動
+options = Options()
+options.add_argument('--headless')
+options.add_argument('--no-sandbox')
+options.add_argument('--disable-gpu')
+options.add_argument('--window-size=1280,1024')
+driver = webdriver.Chrome(chrome_options=options)
+
 #一般教養科目の休講情報を取得しdfで返す
-def get_table():
+def create_df():
     #アカウント情報を取得
     if os.name == "nt":
         f = open("./account.json","r")
@@ -18,14 +26,14 @@ def get_table():
     account = json.load(f)
     f.close()
 
-    #ログイン処理
-    options = Options()
-    options.add_argument('--headless')
-    options.add_argument('--no-sandbox')
-    options.add_argument('--disable-gpu')
-    options.add_argument('--window-size=1280,1024')
-    driver = webdriver.Chrome(chrome_options=options)
-    driver.get("https://www.k.kyoto-u.ac.jp/student/la/notice/cancel")
+
+    liberal_url = "https://www.k.kyoto-u.ac.jp/student/la"
+    special_url = "https://www.k.kyoto-u.ac.jp/student/u/"
+    last_url = "/notice/cancel"
+    specials = ["let","ed","l","ec","s","med","medh","p","t","a","h",]
+
+    #まず全共のページに行く際にログイン処理をする
+    driver.get(liberal_url+last_url)
     driver.find_element_by_id("username").send_keys(account["ecs-id"])
     driver.find_element_by_id("password").send_keys(account["password"])
     driver.find_element_by_name("_eventId_proceed").click()
@@ -33,33 +41,30 @@ def get_table():
 
     #DataFrameを作成
     df = pd.DataFrame()
+    df_liberal = pd.DataFrame()
+    df_special = pd.DataFrame()
 
-    #テーブルデータを取得
-    elements = driver.find_elements_by_class_name("odd_normal")
-    for e in elements:
-        tds = e.find_elements_by_tag_name("td")
-        data = []
-        for td in tds:
-            data.append(str(td.text))
-        tmp_df = pd.DataFrame(data)
-        df = df.append(tmp_df.T)
+    #全学共通科目のdfを作成
+    df_liberal = get_table(liberal_url+last_url)
 
-    elements = driver.find_elements_by_class_name("even_normal")
-    for e in elements:
-        tds = e.find_elements_by_tag_name("td")
-        data = []
-        for td in tds:
-            data.append(str(td.text))
-        tmp_df = pd.DataFrame(data)
-        df = df.append(tmp_df.T)
+    #専門科目のdfを作成
+    for special in specials:
+        tmp_df = get_table(special_url+special+last_url)
+        df_special = pd.concat([df_special,tmp_df])
 
     driver.close()
     driver.quit()
-
+    print(len(df_special.columns))
     #データの整理
-    df = df.iloc[:,0:4]
-    df.columns =["time","subject","teacher","date"]
-    df = df.reset_index(drop=True)
+    df_liberal = df_liberal.iloc[:,0:4]
+    df_liberal.columns =["time","subject","teacher","date"]
+
+    df_special = df_special.iloc[:,0:5]
+    df_special.columns =["time","subject","teacher","department","date"]
+
+    df = pd.concat([df_liberal,df_special[["time","subject","teacher","date"]]])
+
+    # df = df.reset_index(drop=True)
     change_time = lambda x: x[-2:-1]
     delete_time = lambda x : x[:-4]
     df["time"] = df["date"].apply(change_time)
@@ -68,6 +73,25 @@ def get_table():
     df["date"] = pd.to_datetime(df["date"])
     df["date"] = df["date"].dt.date
     df["teacher"] = df["teacher"].str.replace("\n"," ")
+
+    return df
+
+#テーブルデータからdfを作成
+def get_table(url):
+    df = pd.DataFrame()
+
+    driver.get(url)
+
+    #テーブルデータを取得
+    for class_name in ["odd_normal","even_normal"]:
+        elements = driver.find_elements_by_class_name(class_name)
+        for e in elements:
+            tds = e.find_elements_by_tag_name("td")
+            data = []
+            for td in tds:
+                data.append(str(td.text))
+            tmp_df = pd.DataFrame(data)
+            df = df.append(tmp_df.T)
 
     return df
 
@@ -123,7 +147,7 @@ def main():
 
 
     #休講情報を取得
-    df = get_table()
+    df = create_df()
 
     today = datetime.date.today()
     tomorrow = today + datetime.timedelta(days = +1)
