@@ -12,3 +12,8 @@
 
 2. "python main.py n"で起動します。
 - n : n限目-5限目までの情報をつぶやきます。6を指定した場合は明日の情報を1限目-5限目までつぶやきます。
+
+## 必要ライブラリ
+- selenium (chrome driver)
+- pandas
+- requests_oauthlib
