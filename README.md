@@ -5,7 +5,7 @@
 その機能を引き継ぎました。
 
 
-# 使い方
+## 使い方
 1. account.jsonとtwtter_account.jsonを作成します。
 - account.json : ecs-id とパスワード
 - twwiter_account.json : twitter apiで使用する4つの鍵
