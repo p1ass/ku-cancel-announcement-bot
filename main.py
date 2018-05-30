@@ -16,9 +16,10 @@ options.add_argument('--disable-gpu')
 options.add_argument('--window-size=1280,1024')
 driver = webdriver.Chrome(chrome_options=options)
 
-#一般教養科目の休講情報を取得しdfで返す
+#全学共通科目と専門科目の休講情報をまとめたDataFrameを作成
 def create_df():
-    #アカウント情報を取得
+
+    #ECS-IDを読み込む
     if os.name == "nt":
         f = open("./account.json","r")
     else:
@@ -39,22 +40,22 @@ def create_df():
     driver.find_element_by_name("_eventId_proceed").click()
 
 
-    #DataFrameを作成
+    #DataFrameを初期化
     df = pd.DataFrame()
     df_liberal = pd.DataFrame()
     df_special = pd.DataFrame()
 
-    #全学共通科目のdfを作成
+    #全学共通科目のDataFrameを作成
     df_liberal = get_table(liberal_url+last_url)
 
-    #専門科目のdfを作成
+    #専門科目のDataFrameを作成
     for special in specials:
         tmp_df = get_table(special_url+special+last_url)
         df_special = pd.concat([df_special,tmp_df])
 
     driver.close()
     driver.quit()
-    print(len(df_special.columns))
+
     #データの整理
     df_liberal = df_liberal.iloc[:,0:4]
     df_liberal.columns =["time","subject","teacher","date"]
@@ -62,6 +63,7 @@ def create_df():
     df_special = df_special.iloc[:,0:5]
     df_special.columns =["time","subject","teacher","department","date"]
 
+    #一つのDataFrameにまとめる
     df = pd.concat([df_liberal,df_special[["time","subject","teacher","date"]]])
 
     # df = df.reset_index(drop=True)
@@ -76,15 +78,15 @@ def create_df():
 
     return df
 
-#テーブルデータからdfを作成
+#urlにあるテーブルデータを読み込みDataFrameを作成
 def get_table(url):
     df = pd.DataFrame()
-
     driver.get(url)
 
     #テーブルデータを取得
     for class_name in ["odd_normal","even_normal"]:
         elements = driver.find_elements_by_class_name(class_name)
+
         for e in elements:
             tds = e.find_elements_by_tag_name("td")
             data = []
@@ -95,7 +97,7 @@ def get_table(url):
 
     return df
 
-#date日のnow限以降の休講情報のツイート文章をリストで返す
+#date日のnow限~5限目の休講情報のツイート文章をリストで返す
 def create_messages(df,date,now):
     msgs = []
     data = []
@@ -103,22 +105,26 @@ def create_messages(df,date,now):
     msg =  date.strftime("%m/%d")+"の休講情報[{}]".format(now_time)
 
     for i in range(now,6):
+        #i限目のDataFrameを作成
         tmp_df = df[df["time"] == i]
+
         msg +="\n【{}限】\n".format(i)
         data = []
 
+        #dataに休講情報を1行づつ格納する
         for index, row in tmp_df.iterrows():
             data.append("{}({})\n".format(row["subject"],row["teacher"]))
 
+        #140字に入るだけのツイート分を作成しmsgsに格納する
         for j in range(len(data)):
-
             if len(msg) + len(data[j])  < 140:
                 msg += data[j]
             else:
                 msgs.append(msg)
-                msg = date.strftime("%m/%d")+"の休講情報(続き)[{}]".format(now_time)
-                msg +="\n【{0}限】\n".format(i)
+                msg = date.strftime("%m/%d")+"の休講情報[{}]".format(now_time)
+                msg +="\n【{0}限続き】\n".format(i)
                 msg += data[j]
+
     msgs.append(msg)
     return msgs
 
