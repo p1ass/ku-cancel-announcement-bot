@@ -159,8 +159,8 @@ def main():
     twitter_cli = TwitterClient(sys.argv[3])
 
     for msg in msgs:
-        print(msg)
-        # twitter_cli.post(msg)
+        # print(msg)
+        twitter_cli.post(msg)
 
 if __name__ == "__main__":
     main()
