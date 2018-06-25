@@ -3,3 +3,4 @@ twitter_account.json
 *.exe
 /.ipynb_checkpoints
 *.ipynb
+__pycache__
