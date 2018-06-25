@@ -4,9 +4,10 @@ import json
 import pandas as pd
 import datetime
 import time
-from requests_oauthlib import OAuth1Session
 import sys
 import os
+
+from twitter_manager import TwitterManager
 
 #ヘッドレスブラウザを起動
 options = Options()
@@ -21,9 +22,9 @@ def createInfoDF():
 
     #ECS-IDを読み込む
     if os.name == "nt":
-        f = open("./account.json","r")
+        f = open("./ku_account.json","r")
     else:
-        f = open("/home/ec2-user/KUCancelAnnouncementBot/account.json","r")
+        f = open("/home/ec2-user/KUCancelAnnouncementBot/ku_account.json","r")
     account = json.load(f)
     f.close()
 
@@ -34,7 +35,7 @@ def createInfoDF():
     last_url = "/notice/cancel"
 
     #まず全共のページに行く際にログイン処理をする
-    driver.get(liberal_url+last_url)
+    driver.get(first_liberal_url+last_url)
     driver.find_element_by_id("username").send_keys(account["ecs-id"])
     driver.find_element_by_id("password").send_keys(account["password"])
     driver.find_element_by_name("_eventId_proceed").click()
@@ -53,6 +54,7 @@ def createInfoDF():
         tmp_df = fetchInfoTable(first_special_url+special+last_url)
         df_special = pd.concat([df_special,tmp_df])
 
+    #ブラウザを閉じる
     driver.close()
     driver.quit()
 
@@ -130,27 +132,10 @@ def createTweetMessages(df,canceled_date,begin):
     msgs.append(msg)
     return msgs
 
-def postToTwitter(msg):
-    if os.name == "nt":
-        f = open("./twitter_account.json","r")
-    else:
-        f = open("/home/ec2-user/KUCancelAnnouncementBot/twitter_account.json","r")
-    tw_ac = json.load(f)
-    f.close()
-
-    twitter = OAuth1Session(tw_ac['consumer_key'], tw_ac['consumer_secret'], tw_ac['access_token_key'], tw_ac['access_token_secret'])
-    params = {"status": msg}
-
-    try:
-        req = twitter.post("https://api.twitter.com/1.1/statuses/update.json", params = params)
-        print(req.text)
-    except:
-        print("can't post.")
-        print(req.text)
-
 def main():
     begin = sys.argv[1]     #1~5の場合その時限からの情報をpostする。6の場合は明日の休講情報をすべてpostする
 
+    twitter_cli = TwitterManager(sys.argv[2])
     #休講情報を取得
     df = createInfoDF()
 
@@ -165,7 +150,7 @@ def main():
         msgs = createTweetMessages(use_df,today,int(begin))
 
     for msg in msgs:
-        postToTwitter(msg)
+        twitter_cli.post(msg)
 
 if __name__ == "__main__":
     main()
