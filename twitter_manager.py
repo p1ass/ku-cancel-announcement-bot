@@ -1,7 +1,7 @@
 from requests_oauthlib import OAuth1Session
 import json
 
-class TwitterManager:
+class TwitterClient:
     def __init__(self,path):
 
         #API情報を読み込む
