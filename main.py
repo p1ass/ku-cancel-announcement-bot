@@ -4,150 +4,157 @@ import json
 import pandas as pd
 import datetime
 import time
-import sys
-import os
 
-from twitter_manager import TwitterManager
+from twitter_manager import TwitterClient
 
-#ヘッドレスブラウザを起動
-options = Options()
-options.add_argument('--headless')
-options.add_argument('--no-sandbox')
-options.add_argument('--disable-gpu')
-options.add_argument('--window-size=1280,1024')
-driver = webdriver.Chrome(chrome_options=options)
+class KULASISGateway():
 
-#全学共通科目と専門科目の休講情報をまとめたDataFrameを作成
-def createInfoDF():
+    def __init__(self,ecs_account_path):
 
-    #ECS-IDを読み込む
-    if os.name == "nt":
-        f = open("./ku_account.json","r")
-    else:
-        f = open("/home/ec2-user/KUCancelAnnouncementBot/ku_account.json","r")
-    account = json.load(f)
-    f.close()
+        #ECS-IDを読み込む
+        f = open(ecs_account_path,"r")
+        ecs_account = json.load(f)
+        f.close()
 
+        #ヘッドレスブラウザを起動
+        options = Options()
+        options.add_argument('--headless')
+        options.add_argument('--no-sandbox')
+        options.add_argument('--disable-gpu')
+        options.add_argument('--window-size=1280,1024')
+        self.driver = webdriver.Chrome(chrome_options=options)
 
-    first_liberal_url = "https://www.k.kyoto-u.ac.jp/student/la"
-    first_special_url = "https://www.k.kyoto-u.ac.jp/student/u/"
-    specials = ["let","ed","l","ec","s","med","medh","p","t","a","h",]
-    last_url = "/notice/cancel"
+        #ログイン処理
+        login_url = "https://www.k.kyoto-u.ac.jp/student/la/top"
+        self.driver.get(login_url)
+        self.driver.find_element_by_id("username").send_keys(ecs_account["ecs-id"])
+        self.driver.find_element_by_id("password").send_keys(ecs_account["password"])
+        self.driver.find_element_by_name("_eventId_proceed").click()
 
-    #まず全共のページに行く際にログイン処理をする
-    driver.get(first_liberal_url+last_url)
-    driver.find_element_by_id("username").send_keys(account["ecs-id"])
-    driver.find_element_by_id("password").send_keys(account["password"])
-    driver.find_element_by_name("_eventId_proceed").click()
+    #全学共通科目と専門科目の休講情報をまとめたDataFrameを作成
+    # df["time"] : 何時間目
+    # df["subject"] : 教科名
+    # df["teacher"] :担当教員
+    # df["date"] : 休講日時
+    def createInfoDF(self):
 
+        first_liberal_url = "https://www.k.kyoto-u.ac.jp/student/la"
+        first_special_url = "https://www.k.kyoto-u.ac.jp/student/u/"
+        specials = ["let","ed","l","ec","s","med","medh","p","t","a","h"]
+        last_url = "/notice/cancel"
 
-    #DataFrameを初期化
-    df = pd.DataFrame()
-    df_liberal = pd.DataFrame()
-    df_special = pd.DataFrame()
+        #DataFrameを初期化
+        df = pd.DataFrame()
+        df_liberal = pd.DataFrame()
+        df_special = pd.DataFrame()
 
-    #全学共通科目のDataFrameを作成
-    df_liberal = fetchInfoTable(first_liberal_url+last_url)
+        #全学共通科目のDataFrameを作成
+        df_liberal = self.fetchInfoTable(first_liberal_url+last_url)
 
-    #専門科目のDataFrameを作成
-    for special in specials:
-        tmp_df = fetchInfoTable(first_special_url+special+last_url)
-        df_special = pd.concat([df_special,tmp_df])
+        #専門科目のDataFrameを作成
+        for special in specials:
+            tmp_df = self.fetchInfoTable(first_special_url+special+last_url)
+            df_special = pd.concat([df_special,tmp_df])
 
-    #ブラウザを閉じる
-    driver.close()
-    driver.quit()
+        #ブラウザを閉じる
+        self.driver.close()
+        self.driver.quit()
 
-    #データの整理
-    df_liberal = df_liberal.iloc[:,0:4]
-    df_liberal.columns =["time","subject","teacher","date"]
+        #データの整理
+        df_liberal = df_liberal.iloc[:,0:4]
+        df_liberal.columns =["time","subject","teacher","date"]
 
-    df_special = df_special.iloc[:,0:5]
-    df_special.columns =["time","subject","teacher","department","date"]
+        df_special = df_special.iloc[:,0:5]
+        df_special.columns =["time","subject","teacher","department","date"]
 
-    #一つのDataFrameにまとめる
-    df = pd.concat([df_liberal,df_special[["time","subject","teacher","date"]]])
+        #一つのDataFrameにまとめる
+        df = pd.concat([df_liberal,df_special[["time","subject","teacher","date"]]])
 
-    # df = df.reset_index(drop=True)
-    change_time = lambda x: x[-2:-1]
-    delete_time = lambda x : x[:-4]
-    df["time"] = df["date"].apply(change_time)
-    df["time"] = df["time"].astype(int)
-    df["date"] = df["date"].apply(delete_time)
-    df["date"] = pd.to_datetime(df["date"])
-    df["date"] = df["date"].dt.date
-    df["teacher"] = df["teacher"].str.replace("\n"," ")
+        #データの整形
+        change_time = lambda x: x[-2:-1]
+        delete_time = lambda x : x[:-4]
+        df["time"] = df["date"].apply(change_time)
+        df["time"] = df["time"].astype(int)
+        df["date"] = df["date"].apply(delete_time)
+        df["date"] = pd.to_datetime(df["date"])
+        df["date"] = df["date"].dt.date
+        df["teacher"] = df["teacher"].str.replace("\n"," ")
 
-    return df
+        return df
 
-#urlにあるテーブルデータを読み込みDataFrameを返す
-def fetchInfoTable(url):
-    df = pd.DataFrame()
-    driver.get(url)
+    #urlにあるテーブルデータを読み込みDataFrameで返す
+    def fetchInfoTable(self,url):
+        df = pd.DataFrame()
+        self.driver.get(url)
 
-    #テーブルデータを取得
-    for class_name in ["odd_normal","even_normal"]:
-        elements = driver.find_elements_by_class_name(class_name)
+        #テーブルデータを取得
+        for class_name in ["odd_normal","even_normal"]:
+            elements = self.driver.find_elements_by_class_name(class_name)
 
-        for e in elements:
-            tds = e.find_elements_by_tag_name("td")
-            data = []
-            for td in tds:
-                data.append(str(td.text))
-            tmp_df = pd.DataFrame(data)
-            df = df.append(tmp_df.T)
+            for e in elements:
+                tds = e.find_elements_by_tag_name("td")
+                data = []
+                for td in tds:
+                    data.append(str(td.text))
+                tmp_df = pd.DataFrame(data)
+                df = df.append(tmp_df.T)
 
-    return df
+        return df
 
-#canceled_date日のbegin限~5限目の休講情報のツイート文章をリストで返す
-def createTweetMessages(df,canceled_date,begin):
-    msgs = []
-    data = []
-    now_time = datetime.datetime.now().strftime("%H:%M")
-    canceled_date_str = canceled_date.strftime("%m/%d")
-
-    msg =  canceled_date_str +"の休講情報[{}]".format(now_time)
-
-    for i in range(begin,6):
-        #i限目のDataFrameを作成
-        tmp_df = df[df["time"] == i]
-
-        msg +="\n【{}限】\n".format(i)
+    #canceled_date日のbegin限~5限目の休講情報のツイート文章をリストで返す
+    def createTweetMessages(self,df,canceled_date,begin):
+        msgs = []
         data = []
+        now_time = datetime.datetime.now().strftime("%H:%M")
+        canceled_date_str = canceled_date.strftime("%m/%d")
 
-        #dataに休講情報を1行づつ格納する
-        for index, row in tmp_df.iterrows():
-            data.append("{}({})\n".format(row["subject"],row["teacher"]))
+        msg =  canceled_date_str +"の休講情報[{}]".format(now_time)
 
-        #140字に入るだけのツイート分を作成しmsgsに格納する
-        for j in range(len(data)):
-            if len(msg) + len(data[j])  < 140:
-                msg += data[j]
-            else:
-                msgs.append(msg)
-                msg = canceled_date_str +"の休講情報[{}]".format(now_time)
-                msg +="\n【{0}限続き】\n".format(i)
-                msg += data[j]
+        for i in range(begin,6):
+            #i限目のDataFrameを作成
+            tmp_df = df[df["time"] == i]
 
-    msgs.append(msg)
-    return msgs
+            msg +="\n【{}限】\n".format(i)
+            data = []
+
+            #dataに休講情報を1行づつ格納する
+            for index, row in tmp_df.iterrows():
+                data.append("{}({})\n".format(row["subject"],row["teacher"]))
+
+            #140字に入るだけのツイート分を作成しmsgsに格納する
+            for j in range(len(data)):
+                if len(msg) + len(data[j])  < 140:
+                    msg += data[j]
+                else:
+                    msgs.append(msg)
+                    msg = canceled_date_str +"の休講情報[{}]".format(now_time)
+                    msg +="\n【{0}限続き】\n".format(i)
+                    msg += data[j]
+
+        msgs.append(msg)
+        return msgs
 
 def main():
     begin = sys.argv[1]     #1~5の場合その時限からの情報をpostする。6の場合は明日の休講情報をすべてpostする
 
-    twitter_cli = TwitterManager(sys.argv[2])
+    #インスタンス作成
+    kulasis_cli = KULASISGateway(sys.argv[2])
+
     #休講情報を取得
-    df = createInfoDF()
+    df = kulasis_cli.createInfoDF()
 
     today = datetime.date.today()
 
     if int(begin) == 6:
         tomorrow = today + datetime.timedelta(days = +1)
         use_df = df[df["date"] == tomorrow ]
-        msgs = createTweetMessages(use_df,tomorrow,1)
+        msgs = kulasis_cli.createTweetMessages(use_df,tomorrow,1)
     else:
         use_df  = df[df["date"] == today ]
-        msgs = createTweetMessages(use_df,today,int(begin))
+        msgs = kulasis_cli.createTweetMessages(use_df,today,int(begin))
+
+    #ツイッタークライアントを作成
+    twitter_cli = TwitterClient(sys.argv[3])
 
     for msg in msgs:
         twitter_cli.post(msg)
