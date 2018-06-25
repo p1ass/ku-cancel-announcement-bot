@@ -4,6 +4,7 @@ import json
 import pandas as pd
 import datetime
 import time
+import sys
 
 from twitter_manager import TwitterClient
 
@@ -114,21 +115,22 @@ class KULASISGateway():
             #i限目のDataFrameを作成
             tmp_df = df[df["time"] == i]
 
-            msg +="\n【{}限】\n".format(i)
+            #dataに休講情報文を1行づつ格納する
             data = []
-
-            #dataに休講情報を1行づつ格納する
             for index, row in tmp_df.iterrows():
                 data.append("{}({})\n".format(row["subject"],row["teacher"]))
 
+
             #140字に入るだけのツイート分を作成しmsgsに格納する
             for j in range(len(data)):
-                if len(msg) + len(data[j])  < 140:
+                if (j == 0 and len(msg) + len(data[j]) + len("\n【n限】\n")  < 140) or (j != 0 and len(msg) + len(data[j]) < 140):
+                    if j == 0:
+                        msg +="\n【{}限】\n".format(i)
                     msg += data[j]
                 else:
                     msgs.append(msg)
                     msg = canceled_date_str +"の休講情報[{}]".format(now_time)
-                    msg +="\n【{0}限続き】\n".format(i)
+                    msg += "\n【{}限】\n".format(i) if j == 0 else "\n【{0}限続き】\n".format(i)
                     msg += data[j]
 
         msgs.append(msg)
@@ -157,7 +159,8 @@ def main():
     twitter_cli = TwitterClient(sys.argv[3])
 
     for msg in msgs:
-        twitter_cli.post(msg)
+        print(msg)
+        # twitter_cli.post(msg)
 
 if __name__ == "__main__":
     main()
