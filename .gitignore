@@ -1,4 +1,5 @@
-*.json
+ku_account.json
+twitter_account.json
 *.exe
 /.ipynb_checkpoints
 *.ipynb
