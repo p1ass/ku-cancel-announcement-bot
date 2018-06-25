@@ -6,12 +6,14 @@
 
 
 ## 使い方
-1. account.jsonとtwtter_account.jsonを作成します。
+1. sample_ecs_account.jsonとsample_twtter_account.jsonの名前を変更して、ecs_account.jsonとtwitter_account.jsonを作成します。
 - account.json : ecs-id とパスワード
-- twwiter_account.json : twitter apiで使用する4つの鍵
+- twitter_account.json : twitter apiで使用する4つの鍵
 
-2. "python main.py n"で起動します。
+2. "python main.py n PATH_TO_ECS_ACCOUNT PATH_TO_TWITTER_ACCOUNT"で起動します。
 - n : n限目-5限目までの情報をつぶやきます。6を指定した場合は明日の情報を1限目-5限目までつぶやきます。
+- PATH_TO_ECS_ACCOUNT : ecs_account.jsonのパス
+- PATH_TO_TWITTER_ACCOUNT : twitter_account.jsonのパス
 
 ## 必要ライブラリ
 - selenium (chrome driver)
