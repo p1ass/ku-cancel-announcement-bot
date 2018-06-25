@@ -17,7 +17,7 @@ options.add_argument('--window-size=1280,1024')
 driver = webdriver.Chrome(chrome_options=options)
 
 #全学共通科目と専門科目の休講情報をまとめたDataFrameを作成
-def create_df():
+def createInfoDF():
 
     #ECS-IDを読み込む
     if os.name == "nt":
@@ -28,10 +28,10 @@ def create_df():
     f.close()
 
 
-    liberal_url = "https://www.k.kyoto-u.ac.jp/student/la"
-    special_url = "https://www.k.kyoto-u.ac.jp/student/u/"
-    last_url = "/notice/cancel"
+    first_liberal_url = "https://www.k.kyoto-u.ac.jp/student/la"
+    first_special_url = "https://www.k.kyoto-u.ac.jp/student/u/"
     specials = ["let","ed","l","ec","s","med","medh","p","t","a","h",]
+    last_url = "/notice/cancel"
 
     #まず全共のページに行く際にログイン処理をする
     driver.get(liberal_url+last_url)
@@ -46,11 +46,11 @@ def create_df():
     df_special = pd.DataFrame()
 
     #全学共通科目のDataFrameを作成
-    df_liberal = get_table(liberal_url+last_url)
+    df_liberal = fetchInfoTable(first_liberal_url+last_url)
 
     #専門科目のDataFrameを作成
     for special in specials:
-        tmp_df = get_table(special_url+special+last_url)
+        tmp_df = fetchInfoTable(first_special_url+special+last_url)
         df_special = pd.concat([df_special,tmp_df])
 
     driver.close()
@@ -78,8 +78,8 @@ def create_df():
 
     return df
 
-#urlにあるテーブルデータを読み込みDataFrameを作成
-def get_table(url):
+#urlにあるテーブルデータを読み込みDataFrameを返す
+def fetchInfoTable(url):
     df = pd.DataFrame()
     driver.get(url)
 
@@ -97,14 +97,16 @@ def get_table(url):
 
     return df
 
-#date日のnow限~5限目の休講情報のツイート文章をリストで返す
-def create_messages(df,date,now):
+#canceled_date日のbegin限~5限目の休講情報のツイート文章をリストで返す
+def createTweetMessages(df,canceled_date,begin):
     msgs = []
     data = []
     now_time = datetime.datetime.now().strftime("%H:%M")
-    msg =  date.strftime("%m/%d")+"の休講情報[{}]".format(now_time)
+    canceled_date_str = canceled_date.strftime("%m/%d")
 
-    for i in range(now,6):
+    msg =  canceled_date_str +"の休講情報[{}]".format(now_time)
+
+    for i in range(begin,6):
         #i限目のDataFrameを作成
         tmp_df = df[df["time"] == i]
 
@@ -121,21 +123,21 @@ def create_messages(df,date,now):
                 msg += data[j]
             else:
                 msgs.append(msg)
-                msg = date.strftime("%m/%d")+"の休講情報[{}]".format(now_time)
+                msg = canceled_date_str +"の休講情報[{}]".format(now_time)
                 msg +="\n【{0}限続き】\n".format(i)
                 msg += data[j]
 
     msgs.append(msg)
     return msgs
 
-#msgで渡されたstringをツイッターに投稿する
-def post_to_twitter(msg):
+def postToTwitter(msg):
     if os.name == "nt":
         f = open("./twitter_account.json","r")
     else:
         f = open("/home/ec2-user/KUCancelAnnouncementBot/twitter_account.json","r")
     tw_ac = json.load(f)
     f.close()
+
     twitter = OAuth1Session(tw_ac['consumer_key'], tw_ac['consumer_secret'], tw_ac['access_token_key'], tw_ac['access_token_secret'])
     params = {"status": msg}
 
@@ -147,28 +149,23 @@ def post_to_twitter(msg):
         print(req.text)
 
 def main():
-    #コマンドライン引数を取得
-    #1~5の場合その時限からの情報をpostする。6の場合は明日の休講情報をすべてpostする
-    argvs = sys.argv
-
+    begin = sys.argv[1]     #1~5の場合その時限からの情報をpostする。6の場合は明日の休講情報をすべてpostする
 
     #休講情報を取得
-    df = create_df()
+    df = createInfoDF()
 
     today = datetime.date.today()
-    tomorrow = today + datetime.timedelta(days = +1)
 
-    #引数によって使うdfを絞り、メッセージを作成
-    if int(argvs[1]) == 6:
+    if int(begin) == 6:
+        tomorrow = today + datetime.timedelta(days = +1)
         use_df = df[df["date"] == tomorrow ]
-        msgs = create_messages(use_df,tomorrow,1)
+        msgs = createTweetMessages(use_df,tomorrow,1)
     else:
         use_df  = df[df["date"] == today ]
-        msgs = create_messages(use_df,today,int(argvs[1]))
+        msgs = createTweetMessages(use_df,today,int(begin))
 
-    #post
     for msg in msgs:
-        post_to_twitter(msg)
+        postToTwitter(msg)
 
 if __name__ == "__main__":
     main()
