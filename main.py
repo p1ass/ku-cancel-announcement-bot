@@ -1,3 +1,4 @@
+#1 /usr/bin/env python
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from pathlib import Path
@@ -14,7 +15,7 @@ class KULASISGateway():
     def __init__(self):
 
         #ECS-IDを読み込む
-        path = Path.cwd() / "ecs_account.json"
+        path = Path.cwd() /    Path(__file__).parents[0]  / "ecs_account.json"
         f = open(path,"r")
         ecs_account = json.load(f)
         f.close()

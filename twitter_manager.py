@@ -5,7 +5,7 @@ import json
 class TwitterClient:
     def __init__(self):
 
-        path = Path.cwd() / "twitter_account.json"
+        path = Path.cwd() /    Path(__file__).parents[0]  / "twitter_account.json"
 
         #API情報を読み込む
         f = open(path,"r")
