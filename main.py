@@ -1,5 +1,6 @@
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from pathlib import Path
 import json
 import pandas as pd
 import datetime
@@ -10,10 +11,11 @@ from twitter_manager import TwitterClient
 
 class KULASISGateway():
 
-    def __init__(self,ecs_account_path):
+    def __init__(self):
 
         #ECS-IDを読み込む
-        f = open(ecs_account_path,"r")
+        path = Path.cwd() / "ecs_account.json"
+        f = open(path,"r")
         ecs_account = json.load(f)
         f.close()
 
@@ -140,7 +142,7 @@ def main():
     begin = sys.argv[1]     #1~5の場合その時限からの情報をpostする。6の場合は明日の休講情報をすべてpostする
 
     #インスタンス作成
-    kulasis_cli = KULASISGateway(sys.argv[2])
+    kulasis_cli = KULASISGateway()
 
     #休講情報を取得
     df = kulasis_cli.createInfoDF()
@@ -156,10 +158,9 @@ def main():
         msgs = kulasis_cli.createTweetMessages(use_df,today,int(begin))
 
     #ツイッタークライアントを作成
-    twitter_cli = TwitterClient(sys.argv[3])
+    twitter_cli = TwitterClient()
 
     for msg in msgs:
-        # print(msg)
         twitter_cli.post(msg)
 
 if __name__ == "__main__":

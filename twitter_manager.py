@@ -1,8 +1,11 @@
 from requests_oauthlib import OAuth1Session
+from pathlib import Path
 import json
 
 class TwitterClient:
-    def __init__(self,path):
+    def __init__(self):
+
+        path = Path.cwd() / "twitter_account.json"
 
         #API情報を読み込む
         f = open(path,"r")
