@@ -73,7 +73,7 @@ class KULASISGateway():
 
         #一つのDataFrameにまとめる
         df = pd.concat([df_liberal,df_special[["time","subject","teacher","date"]]])
-
+        df = df[df["time"] != "集中"]
         #データの整形
         change_time = lambda x: x[-2:-1]
         delete_time = lambda x : x[:-4]
