@@ -6,11 +6,11 @@
 
 
 ## 使い方
-1. sample_ecs_account.jsonとsample_twtter_account.jsonの名前を変更して、ecs_account.jsonとtwitter_account.jsonを作成します。
-- account.json : ecs-id とパスワード
-- twitter_account.json : twitter apiで使用する4つの鍵
+1. `sample_ecs_account.json`と`sample_twtter_account.json`の名前を変更して、`ecs_account.json`と`twitter_account.json`を作成します。
+- ``account.json `: ecs-id とパスワード
+- `twitter_account.json` : twitter apiで使用する4つの鍵
 
-2. 'python main.py n ''で起動します。
+2. `python main.py n`で起動します。
 - n : n限目-5限目までの情報をつぶやきます。6を指定した場合は明日の情報を1限目-5限目までつぶやきます。
 
 ## 必要ライブラリ
