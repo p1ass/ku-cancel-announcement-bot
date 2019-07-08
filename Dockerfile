@@ -13,4 +13,4 @@ apt-get update && apt-get install -y google-chrome-stable libgconf2-4 libnss3-de
 
 RUN pip install -r requirements.txt
 
-# ENTRYPOINT [ "python", "main.py" ]
+ENTRYPOINT [ "python", "main.py" ]

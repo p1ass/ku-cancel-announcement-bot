@@ -105,7 +105,6 @@ class KULASISGateway():
 
     #canceled_date日のbegin限~5限目の休講情報のツイート文章をリストで返す
     def createTweetMessages(self,df,canceled_date,begin):
-        print(df)
         msgs = []
         data = []
         now_time = datetime.datetime.now().strftime("%H:%M")
