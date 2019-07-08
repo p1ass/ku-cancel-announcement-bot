@@ -1,19 +1,12 @@
 from requests_oauthlib import OAuth1Session
 from pathlib import Path
 import json
+import os
 
 class TwitterClient:
     def __init__(self):
-
-        path = Path.cwd() /    Path(__file__).parents[0]  / "twitter_account.json"
-
-        #API情報を読み込む
-        f = open(path,"r")
-        self.twitter_account = json.load(f)
-        f.close()
-
         #セッションを確立
-        self.twitter = OAuth1Session(self.twitter_account['consumer_key'], self.twitter_account['consumer_secret'], self.twitter_account['access_token_key'], self.twitter_account['access_token_secret'])
+        self.twitter = OAuth1Session(os.environ['CONSUMER_KEY'], os.environ['CONSUMER_SECRET'], os.environ['ACCESS_TOKEN_KEY'],  os.environ['ACCESS_TOKEN_SECRET'])
 
     def post(self,msg):
 

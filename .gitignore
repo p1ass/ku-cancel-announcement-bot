@@ -4,3 +4,6 @@ twitter_account.json
 /.ipynb_checkpoints
 *.ipynb
 __pycache__
+
+.env
+.envrc

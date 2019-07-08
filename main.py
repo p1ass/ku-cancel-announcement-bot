@@ -7,6 +7,7 @@ import pandas as pd
 import datetime
 import time
 import sys
+import os
 
 from twitter_manager import TwitterClient
 
@@ -15,10 +16,7 @@ class KULASISGateway():
     def __init__(self):
 
         #ECS-IDを読み込む
-        path = Path.cwd() /    Path(__file__).parents[0]  / "ecs_account.json"
-        f = open(path,"r")
-        ecs_account = json.load(f)
-        f.close()
+        ecs_account = {"ecs-id":os.environ["ECSID"],"password":os.environ["PASSWORD"]}
 
         #ヘッドレスブラウザを起動
         options = Options()
@@ -26,7 +24,7 @@ class KULASISGateway():
         options.add_argument('--no-sandbox')
         options.add_argument('--disable-gpu')
         options.add_argument('--window-size=1280,1024')
-        self.driver = webdriver.Chrome(chrome_options=options)
+        self.driver = webdriver.Chrome("/usr/local/bin/chromedriver",options=options)
 
         #ログイン処理
         login_url = "https://www.k.kyoto-u.ac.jp/student/la/top"
