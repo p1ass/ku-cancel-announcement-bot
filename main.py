@@ -71,11 +71,16 @@ class KULASISGateway():
 
         #一つのDataFrameにまとめる
         df = pd.concat([df_liberal,df_special[["time","subject","teacher","date"]]])
+
+        # 特別な情報を除外
         df = df[df["time"] != "集中"]
+        df = df[df["time"] != "その他"]
+
         #データの整形
         change_time = lambda x: x[-2:-1]
         delete_time = lambda x : x[:-4]
         df["time"] = df["date"].apply(change_time)
+
         df["time"] = df["time"].astype(int)
         df["date"] = df["date"].apply(delete_time)
         df["date"] = pd.to_datetime(df["date"])

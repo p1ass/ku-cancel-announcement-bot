@@ -11,14 +11,14 @@ Dockerイメージを使って起動することができます。
 
 1. Dockerイメージをpullする。
 ```bash
-docker pull naokikishi/ku-cancel-announcement:latest
+docker pull plass/ku-cancel-announcement:latest
 ``` 
 
 2. `.env.example`を参考に環境変数を定義した`.env`ファイルを作る。
 
 3. 実行
 ```bash
-docker run -it --rm  --env-file=.env  naokikishi/ku-cancel-announcement-bot [N]
+docker run -it --rm  --env-file=.env  plass/ku-cancel-announcement-bot [N]
 ```
 
 **パラメータ**
