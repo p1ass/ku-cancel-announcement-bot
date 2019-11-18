@@ -34,4 +34,4 @@ MIT
 ```bash
 git checkout -b topic_branch
 ```
-3. [naoki-kishi/ku-cancel-announcement-bot](https://github.com/naoki-kishi/ku-cancel-announcement-bot)対してPull Requestを作成する。
+3. [p1ass/ku-cancel-announcement-bot](https://github.com/p1ass/ku-cancel-announcement-bot)対してPull Requestを作成する。
