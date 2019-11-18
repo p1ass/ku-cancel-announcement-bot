@@ -11,7 +11,7 @@ Dockerイメージを使って起動することができます。
 
 1. Dockerイメージをpullする。
 ```bash
-docker pull plass/ku-cancel-announcement:latest
+docker pull plass/ku-cancel-announcement-bot:latest
 ``` 
 
 2. `.env.example`を参考に環境変数を定義した`.env`ファイルを作る。
