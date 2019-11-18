@@ -5,8 +5,11 @@ import os
 
 class TwitterClient:
     def __init__(self):
-        #セッションを確立
-        self.twitter = OAuth1Session(os.environ['CONSUMER_KEY'], os.environ['CONSUMER_SECRET'], os.environ['ACCESS_TOKEN_KEY'],  os.environ['ACCESS_TOKEN_SECRET'])
+        # セッションを確立
+        self.twitter = OAuth1Session(os.environ['CONSUMER_KEY'],
+         os.environ['CONSUMER_SECRET'], 
+         os.environ['ACCESS_TOKEN_KEY'], 
+         os.environ['ACCESS_TOKEN_SECRET'])
 
     def post(self,msg):
 
