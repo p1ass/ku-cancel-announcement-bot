@@ -1,4 +1,4 @@
-FROM python:3.8.3
+FROM python:3.9.0
 WORKDIR /workdir
 
 RUN wget https://chromedriver.storage.googleapis.com/81.0.4044.69/chromedriver_linux64.zip && \
